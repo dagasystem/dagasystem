@@ -106,7 +106,7 @@ button:disabled {
         type="text"
         id="memberCode"
         maxlength="20"
-        placeholder="例：GADA0001"
+        placeholder="例：DAGA0001"
     >
 
     <button id="saveBtn" onclick="registerMember()">
@@ -156,10 +156,14 @@ async function main() {
 
     } catch (e) {
 
-        console.error(e);
-        alert("初期化エラー");
+    console.error(e);
 
-    }
+    alert(
+      "初期化エラー\\n" +
+      e.message
+    );
+
+}
 }
 
 function restoreSavedQR() {
