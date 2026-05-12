@@ -221,7 +221,8 @@ async function registerMember() {
     } catch (e) {
 
         console.error(e);
-        alert("エラーが発生しました");
+        alert( "エラー詳細\\n" +
+      e.message);
 
     } finally {
 
