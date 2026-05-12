@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>駄菓子屋ポイント付与</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.2rem; color: #333; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; font-size: 1.1rem; cursor: pointer; }
+        .ad-space { margin-top: 20px; padding: 10px; background: #eee; text-align: center; font-size: 0.8rem; color: #666; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>ポイント付与・決済</h1>
+    <p id="targetName">読み込み中...</p>
+    
+    <label>金額（ポイント数）</label>
+    <input type="number" id="amount" placeholder="例: 100" inputmode="numeric">
+    
+    <button onclick="sendData()">ポイントを確定する</button>
+
+    <div class="ad-space">
+        <p>【スポンサー枠】</p>
+        <a href="https://example.com" target="_blank">
+            <img src="https://via.placeholder.com/300x50?text=Your+Ad+Here" alt="広告バナー" style="max-width:100%;">
+        </a>
+    </div>
+</div>
+
+<script>
+    // URLパラメータから親のLINE IDを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const parentId = urlParams.get('pid'); 
+
+    async function main() {
+        await liff.init({ liffId: "YOUR_LIFF_ID" }); // LINE Developersで発行されたIDに書き換え
+        if (!liff.isLoggedIn()) {
+            liff.login();
+        }
+        // 親の名前を特定（実際はGAS経由で取得するのが理想ですが、一旦ID表示）
+        document.getElementById('targetName').innerText = "付与対象ID: " + parentId;
+    }
+
+    async function sendData() {
+        const amount = document.getElementById('amount').value;
+        const operator = await liff.getProfile(); // 店主の情報を取得
+
+        if (!amount) return alert("金額を入力してください");
+
+        // GASへデータを送信
+        const gasUrl = "YOUR_GAS_WEB_APP_URL"; // GASの公開URLに書き換え
+        
+        const response = await fetch(gasUrl, {
+            method: "POST",
+            body: JSON.stringify({
+                operatorId: operator.userId,
+                targetId: parentId,
+                amount: amount,
+                type: "purchase" // 現金購入
+            })
+        });
+
+        if (response.ok) {
+            alert("完了しました！");
+            liff.closeWindow();
+        } else {
+            alert("エラーが発生しました");
+        }
+    }
+    main();
+</script>
+</body>
+</html>
