@@ -119,6 +119,8 @@ button:disabled{
 
     <div id="qrcode"></div>
 
+    <p id="registeredMessage"></p>
+    
     <div class="notice">
         店頭でこのQRコードを提示してください。<br>
         ポイント付与や駄菓子購入に利用できます。
@@ -206,7 +208,18 @@ function restoreSavedQR() {
 
     if (!saved) return;
 
+    // QR表示
     generateQR(saved);
+
+    // 入力欄を非表示
+    document.getElementById("memberCode").style.display = "none";
+
+    // ボタンを非表示
+    document.getElementById("saveBtn").style.display = "none";
+
+    // メッセージ表示
+    document.getElementById("registeredMessage").innerText =
+        "会員証発行済みです";
 
 }
 
