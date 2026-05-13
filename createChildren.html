@@ -160,7 +160,31 @@ function onScanSuccess(decodedText){
         if(data.success){
 
             parentId = data.userId;
+            
+            // 既存子カード確認
+            fetch(GAS_URL,{
+                method:"POST",
+                headers:{
+                    "Content-Type":"text/plain"
+                },
+                body:JSON.stringify({
+                    action:"getChildren",
+                    parentId:parentId
+                })
+            })
+            .then(res=>res.json())
+            .then(r=>{
+            
+                // 既存子がいる
+                if(r.children.length > 0){
+            
+                    renderCards(r.children);
+            
+                }
+            
+            });
 
+            
             document.getElementById("parentInfo").innerText =
                 "親：" + data.name +
                 " / 残高：" + data.balance + "pt";
