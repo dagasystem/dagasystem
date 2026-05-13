@@ -205,11 +205,18 @@ async function registerMember() {
 
         const response = await fetch(GAS_URL, {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify(payload)
         });
-
-        if (!response.ok) {
-            throw new Error("保存失敗");
+        
+        const result = await response.json();
+        
+        console.log(result);
+        
+        if (!result.success) {
+            throw new Error(result.message);
         }
 
         localStorage.setItem("memberQR", secureCode);
