@@ -3,93 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>だがポイント会員証</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-body {
-    margin: 0;
-    padding: 20px;
-    background: #f4f4f4;
-    font-family: sans-serif;
+
+body{
+    margin:0;
+    padding:20px;
+    background:#f4f4f4;
+    font-family:sans-serif;
 }
 
-.card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    max-width: 420px;
-    margin: auto;
+.card{
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    max-width:420px;
+    margin:auto;
 }
 
-h1 {
-    font-size: 1.4rem;
-    margin-bottom: 10px;
+h1{
+    font-size:1.4rem;
+    margin-bottom:10px;
 }
 
-.user-box {
-    margin-bottom: 20px;
-    padding: 10px;
-    background: #fafafa;
-    border-radius: 8px;
+.user-box{
+    margin-bottom:20px;
+    padding:10px;
+    background:#fafafa;
+    border-radius:8px;
 }
 
-input {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-sizing: border-box;
-    font-size: 1rem;
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    box-sizing:border-box;
+    font-size:1rem;
 }
 
-button {
-    width: 100%;
-    padding: 14px;
-    margin-top: 15px;
-    border: none;
-    border-radius: 8px;
-    background: #28a745;
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
+button{
+    width:100%;
+    padding:14px;
+    margin-top:15px;
+    border:none;
+    border-radius:8px;
+    background:#28a745;
+    color:white;
+    font-size:1rem;
+    cursor:pointer;
 }
 
-button:disabled {
-    background: #999;
+button:disabled{
+    background:#999;
 }
 
-#qrcode {
-    margin-top: 20px;
-    text-align: center;
+#qrcode{
+    margin-top:20px;
+    text-align:center;
 }
 
-.qr-label {
-    margin-top: 10px;
-    font-size: 1rem;
-    font-weight: bold;
+.qr-label{
+    margin-top:10px;
+    font-size:1rem;
+    font-weight:bold;
 }
 
-.notice {
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: #666;
-    line-height: 1.6;
+.notice{
+    margin-top:20px;
+    font-size:0.9rem;
+    color:#666;
+    line-height:1.6;
 }
 
-.ad-space {
-    margin-top: 25px;
-    padding: 10px;
-    background: #efefef;
-    text-align: center;
-    border-radius: 8px;
+.ad-space{
+    margin-top:25px;
+    padding:10px;
+    background:#efefef;
+    text-align:center;
+    border-radius:8px;
 }
+
 </style>
 </head>
+
 <body>
 
 <div class="card">
@@ -128,21 +132,45 @@ button:disabled {
 
 <script>
 
+// ==============================
+// LIFF ID
+// ==============================
+
 const LIFF_ID = "2010065973-cWx3mMGk";
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbya_3ShVsEa2PWMJZFqqVYU0z8UnzW8U_MaC6dxHAtDQpdw9RuIBaYuQLI3VzHdRtfPyw/exec";
+
+// ==============================
+// GAS URL
+// ==============================
+
+const GAS_URL =
+"https://script.google.com/macros/s/AKfycbya_3ShVsEa2PWMJZFqqVYU0z8UnzW8U_MaC6dxHAtDQpdw9RuIBaYuQLI3VzHdRtfPyw/exec";
+
+
+// ==============================
+// グローバル
+// ==============================
 
 let profileData = null;
+
+
+// ==============================
+// 初期化
+// ==============================
 
 async function main() {
 
     try {
 
-        await liff.init({ liffId: LIFF_ID });
+        await liff.init({
+            liffId: LIFF_ID
+        });
 
         if (!liff.isLoggedIn()) {
+
             liff.login();
             return;
+
         }
 
         const profile = await liff.getProfile();
@@ -156,15 +184,21 @@ async function main() {
 
     } catch (e) {
 
-    console.error(e);
+        console.error(e);
 
-    alert(
-      "初期化エラー\\n" +
-      e.message
-    );
+        alert(
+            "LIFF初期化エラー\n\n" +
+            e.message
+        );
+
+    }
 
 }
-}
+
+
+// ==============================
+// 保存済QR復元
+// ==============================
 
 function restoreSavedQR() {
 
@@ -173,13 +207,20 @@ function restoreSavedQR() {
     if (!saved) return;
 
     generateQR(saved);
+
 }
+
+
+// ==============================
+// 会員登録
+// ==============================
 
 async function registerMember() {
 
     try {
 
         const btn = document.getElementById("saveBtn");
+
         btn.disabled = true;
 
         const memberCode = document
@@ -189,37 +230,59 @@ async function registerMember() {
             .toUpperCase();
 
         if (!memberCode) {
+
             alert("会員コードを入力してください");
+
             btn.disabled = false;
+
             return;
+
         }
 
-        const secureCode = memberCode + "-" + randomCode(4);
+        const secureCode =
+            memberCode + "-" + randomCode(4);
 
         const payload = {
+
             userId: profileData.userId,
             displayName: profileData.displayName,
             code: secureCode,
             timestamp: new Date().toISOString()
+
         };
 
-        const response = await fetch(GAS_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-        
-        alert(result);
-        
-        if (!result.success) {
-            throw new Error(result.message);
-        }
+        console.log(payload);
 
-        localStorage.setItem("memberQR", secureCode);
+        // ==============================
+        // GAS送信
+        // ==============================
+
+        await fetch(GAS_URL, {
+
+            method: "POST",
+
+            mode: "no-cors",
+
+            headers: {
+                "Content-Type": "text/plain"
+            },
+
+            body: JSON.stringify(payload)
+
+        });
+
+        // ==============================
+        // ローカル保存
+        // ==============================
+
+        localStorage.setItem(
+            "memberQR",
+            secureCode
+        );
+
+        // ==============================
+        // QR生成
+        // ==============================
 
         generateQR(secureCode);
 
@@ -228,55 +291,91 @@ async function registerMember() {
     } catch (e) {
 
         console.error(e);
-        alert( "エラーの詳細\\n" +
-      e.message);
+
+        alert(
+            "登録エラー\n\n" +
+            e.message
+        );
 
     } finally {
 
         document.getElementById("saveBtn").disabled = false;
 
     }
+
 }
+
+
+// ==============================
+// QR生成
+// ==============================
 
 function generateQR(code) {
 
-    const qrArea = document.getElementById("qrcode");
+    const qrArea =
+        document.getElementById("qrcode");
 
     qrArea.innerHTML = "";
 
-    QRCode.toCanvas(code, {
-        width: 240,
-        margin: 2
-    }, function(error, canvas) {
+    QRCode.toCanvas(
+        code,
+        {
+            width:240,
+            margin:2
+        },
+        function(error, canvas){
 
-        if (error) {
-            console.error(error);
-            return;
+            if(error){
+
+                console.error(error);
+                return;
+
+            }
+
+            qrArea.appendChild(canvas);
+
+            const label =
+                document.createElement("div");
+
+            label.className = "qr-label";
+
+            label.innerText = code;
+
+            qrArea.appendChild(label);
+
         }
+    );
 
-        qrArea.appendChild(canvas);
-
-        const label = document.createElement("div");
-        label.className = "qr-label";
-        label.innerText = code;
-
-        qrArea.appendChild(label);
-
-    });
 }
 
-function randomCode(length) {
 
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+// ==============================
+// ランダムコード
+// ==============================
+
+function randomCode(length){
+
+    const chars =
+        "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     let result = "";
 
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    for(let i=0;i<length;i++){
+
+        result += chars.charAt(
+            Math.floor(Math.random() * chars.length)
+        );
+
     }
 
     return result;
+
 }
+
+
+// ==============================
+// 実行
+// ==============================
 
 main();
 
@@ -284,5 +383,3 @@ main();
 
 </body>
 </html>
-
-
