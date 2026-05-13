@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ポイントレジ</title>
+<title>ポイントチャージ端末</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -26,35 +26,16 @@ body{
 
 h1{
     font-size:20px;
-}
-
-input{
-    width:100%;
-    padding:12px;
-    font-size:16px;
     margin-bottom:10px;
-    border:1px solid #ccc;
-    border-radius:8px;
-}
-
-button{
-    width:100%;
-    padding:14px;
-    font-size:16px;
-    border:none;
-    border-radius:8px;
-    background:#28a745;
-    color:white;
-    margin-top:10px;
 }
 
 #reader{
-    margin-top:15px;
+    margin-top:10px;
 }
 
-.box{
+.info{
     margin-top:15px;
-    padding:10px;
+    padding:12px;
     background:#f0f0f0;
     border-radius:8px;
 }
@@ -65,7 +46,34 @@ button{
 }
 
 .balance{
-    color:#555;
+    margin-top:5px;
+    color:#333;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    font-size:16px;
+    margin-top:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+    background:#007bff;
+    color:white;
+    margin-top:10px;
+    cursor:pointer;
+}
+
+button:active{
+    transform:scale(0.98);
 }
 </style>
 
@@ -75,18 +83,18 @@ button{
 
 <div class="card">
 
-<h1>ポイントレジ</h1>
+<h1>ポイントチャージ</h1>
 
 <div id="reader"></div>
 
-<div class="box">
-  <div class="name" id="name">未読取</div>
-  <div class="balance" id="balance">残高：-</div>
+<div class="info">
+    <div class="name" id="name">未読み取り</div>
+    <div class="balance" id="balance">残高：-</div>
 </div>
 
-<input type="number" id="amount" placeholder="ポイント入力（例：120）">
+<input type="number" id="amount" placeholder="追加ポイント（例：1000）">
 
-<button onclick="charge()">確定</button>
+<button onclick="addPoint()">チャージ実行</button>
 
 </div>
 
@@ -96,26 +104,22 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbya_3ShVsEa2PWMJZFqqVYU
 
 let currentCode = null;
 
-// =======================
+// ==============================
 // QR読み取り
-// =======================
-
+// ==============================
 function onScanSuccess(decodedText) {
 
     currentCode = decodedText;
 
     fetch(GAS_URL, {
-
         method: "POST",
         headers: {
             "Content-Type": "text/plain"
         },
-
         body: JSON.stringify({
             action: "getUser",
             code: decodedText
         })
-
     })
     .then(res => res.json())
     .then(data => {
@@ -136,42 +140,40 @@ function onScanSuccess(decodedText) {
 
 }
 
-// =======================
-// ポイント処理（加算/減算）
-function charge() {
+// ==============================
+// チャージ（加算）
+// ==============================
+function addPoint() {
 
     const amount = document.getElementById("amount").value;
 
     if (!currentCode) {
-        alert("QRを読み取ってください");
+        alert("QRコードを読み取ってください");
         return;
     }
 
     if (!amount) {
-        alert("金額を入力してください");
+        alert("ポイントを入力してください");
         return;
     }
 
     fetch(GAS_URL, {
-
         method: "POST",
         headers: {
             "Content-Type": "text/plain"
         },
-
         body: JSON.stringify({
-            action: "usePoint",
+            action: "addPoint",
             code: currentCode,
             amount: Number(amount)
         })
-
     })
     .then(res => res.json())
     .then(data => {
 
         if (data.success) {
 
-            alert("処理完了 残高：" + data.balance);
+            alert("チャージ完了！ 残高：" + data.balance);
 
             document.getElementById("balance").innerText =
                 "残高：" + data.balance + "pt";
@@ -188,15 +190,14 @@ function charge() {
 
 }
 
-// =======================
+// ==============================
 // カメラ起動
-// =======================
-
+// ==============================
 const html5QrCode = new Html5Qrcode("reader");
 
 Html5Qrcode.getCameras().then(devices => {
 
-    if (devices.length) {
+    if (devices && devices.length) {
 
         html5QrCode.start(
             { facingMode: "environment" },
