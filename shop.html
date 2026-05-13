@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ポイントチャージ端末</title>
+<title>ポイントレジ</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -43,7 +43,7 @@ button{
     font-size:16px;
     border:none;
     border-radius:8px;
-    background:#007bff;
+    background:#28a745;
     color:white;
     margin-top:10px;
 }
@@ -52,9 +52,20 @@ button{
     margin-top:15px;
 }
 
-.status{
+.box{
     margin-top:15px;
+    padding:10px;
+    background:#f0f0f0;
+    border-radius:8px;
+}
+
+.name{
+    font-size:18px;
     font-weight:bold;
+}
+
+.balance{
+    color:#555;
 }
 </style>
 
@@ -64,51 +75,74 @@ button{
 
 <div class="card">
 
-<h1>ポイントチャージ端末</h1>
-
-<label>チャージ金額</label>
-<input type="number" id="amount" placeholder="例：3000">
+<h1>ポイントレジ</h1>
 
 <div id="reader"></div>
 
-<p class="status" id="status">待機中</p>
+<div class="box">
+  <div class="name" id="name">未読取</div>
+  <div class="balance" id="balance">残高：-</div>
+</div>
+
+<input type="number" id="amount" placeholder="ポイント入力（例：120）">
+
+<button onclick="charge()">確定</button>
 
 </div>
 
 <script>
 
-// ==========================
-// GAS URL
-// ==========================
-
 const GAS_URL = "https://script.google.com/macros/s/AKfycbya_3ShVsEa2PWMJZFqqVYU0z8UnzW8U_MaC6dxHAtDQpdw9RuIBaYuQLI3VzHdRtfPyw/exec";
 
-let scannedCode = null;
+let currentCode = null;
 
-// ==========================
+// =======================
 // QR読み取り
-// ==========================
+// =======================
 
 function onScanSuccess(decodedText) {
 
-    scannedCode = decodedText;
+    currentCode = decodedText;
 
-    document.getElementById("status").innerText =
-        "読み取り成功: " + decodedText;
+    fetch(GAS_URL, {
 
-    chargePoint();
+        method: "POST",
+        headers: {
+            "Content-Type": "text/plain"
+        },
+
+        body: JSON.stringify({
+            action: "getUser",
+            code: decodedText
+        })
+
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.success) {
+
+            document.getElementById("name").innerText =
+                "名前：" + data.name;
+
+            document.getElementById("balance").innerText =
+                "残高：" + data.balance + "pt";
+
+        } else {
+            alert("ユーザーが見つかりません");
+        }
+
+    });
 
 }
 
-// ==========================
-// チャージ処理（加算）
-// ==========================
-
-function chargePoint() {
+// =======================
+// ポイント処理（加算/減算）
+function charge() {
 
     const amount = document.getElementById("amount").value;
 
-    if (!scannedCode) {
+    if (!currentCode) {
         alert("QRを読み取ってください");
         return;
     }
@@ -126,8 +160,8 @@ function chargePoint() {
         },
 
         body: JSON.stringify({
-            action: "addPoint",
-            code: scannedCode,
+            action: "usePoint",
+            code: currentCode,
             amount: Number(amount)
         })
 
@@ -137,53 +171,37 @@ function chargePoint() {
 
         if (data.success) {
 
-            alert(
-                "チャージ完了！\n" +
-                "追加: " + amount + "pt\n" +
-                "残高: " + data.balance + "pt"
-            );
+            alert("処理完了 残高：" + data.balance);
 
-            document.getElementById("status").innerText =
-                "残高: " + data.balance + "pt";
+            document.getElementById("balance").innerText =
+                "残高：" + data.balance + "pt";
 
-            scannedCode = null;
             document.getElementById("amount").value = "";
 
+            currentCode = null;
+
         } else {
-
-            alert("エラー: " + data.message);
-
+            alert(data.message);
         }
 
-    })
-    .catch(err => {
-        console.error(err);
-        alert("通信エラー");
     });
 
 }
 
-// ==========================
+// =======================
 // カメラ起動
-// ==========================
+// =======================
 
 const html5QrCode = new Html5Qrcode("reader");
 
 Html5Qrcode.getCameras().then(devices => {
 
-    if (devices && devices.length) {
+    if (devices.length) {
 
         html5QrCode.start(
-
             { facingMode: "environment" },
-
-            {
-                fps: 10,
-                qrbox: 250
-            },
-
+            { fps: 10, qrbox: 250 },
             onScanSuccess
-
         );
 
     }
