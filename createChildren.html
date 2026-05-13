@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>子カード発行</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+
+body{
+    font-family:sans-serif;
+    background:#f4f4f4;
+    padding:20px;
+}
+
+.card{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+h1{
+    margin-top:0;
+}
+
+#reader{
+    margin-top:10px;
+}
+
+.info{
+    background:#f0f0f0;
+    padding:12px;
+    border-radius:8px;
+    margin-top:15px;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    margin-top:15px;
+    border:none;
+    border-radius:8px;
+    background:#007bff;
+    color:white;
+    font-size:16px;
+}
+
+.child-card{
+    background:white;
+    border:2px solid #ddd;
+    border-radius:12px;
+    padding:15px;
+    margin-top:20px;
+    text-align:center;
+    page-break-inside:avoid;
+}
+
+.qr{
+    margin-top:10px;
+}
+
+.print-btn{
+    background:#28a745;
+}
+
+@media print{
+
+    button,
+    #reader,
+    .info,
+    #createArea{
+        display:none;
+    }
+
+    body{
+        background:white;
+    }
+
+    .child-card{
+        border:1px solid #000;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>子カード発行</h1>
+
+<div id="reader"></div>
+
+<div class="info">
+    <div id="parentInfo">親QRを読み取ってください</div>
+</div>
+
+<div id="createArea" style="display:none;">
+
+    <input type="number" id="count" placeholder="子どもの人数">
+
+    <button onclick="generateInputs()">
+        名前入力へ進む
+    </button>
+
+    <div id="nameInputs"></div>
+
+</div>
+
+<div id="cards"></div>
+
+<button class="print-btn" onclick="window.print()">
+    印刷する
+</button>
+
+</div>
+
+<script>
+
+const GAS_URL =
+"https://script.google.com/macros/s/AKfycbxBdXzHguVz7CNH393mkRaQd9kcdy-_tmLbtAqORdVL1ypM8Gd7ax7MOtR2XVLgcenErQ/exec";
+
+let parentId = null;
+
+// ==============================
+// QR読み取り
+// ==============================
+function onScanSuccess(decodedText){
+
+    fetch(GAS_URL,{
+        method:"POST",
+        headers:{
+            "Content-Type":"text/plain"
+        },
+        body:JSON.stringify({
+            action:"getUser",
+            code:decodedText
+        })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        if(data.success){
+
+            parentId = data.userId;
+
+            document.getElementById("parentInfo").innerText =
+                "親：" + data.name +
+                " / 残高：" + data.balance + "pt";
+
+            document.getElementById("createArea").style.display = "block";
+
+        }else{
+            alert("親が見つかりません");
+        }
+
+    });
+
+}
+
+// ==============================
+// 名前入力欄生成
+// ==============================
+function generateInputs(){
+
+    const count =
+        Number(document.getElementById("count").value);
+
+    const area =
+        document.getElementById("nameInputs");
+
+    area.innerHTML = "";
+
+    for(let i=0;i<count;i++){
+
+        area.innerHTML += `
+            <input
+                type="text"
+                id="child${i}"
+                placeholder="子どもの名前 ${i+1}"
+            >
+        `;
+
+    }
+
+    area.innerHTML += `
+        <button onclick="createChildren()">
+            子カード作成
+        </button>
+    `;
+}
+
+// ==============================
+// 子カード作成
+// ==============================
+function createChildren(){
+
+    const count =
+        Number(document.getElementById("count").value);
+
+    const children = [];
+
+    for(let i=0;i<count;i++){
+
+        children.push({
+            name:document.getElementById(`child${i}`).value
+        });
+
+    }
+
+    fetch(GAS_URL,{
+        method:"POST",
+        headers:{
+            "Content-Type":"text/plain"
+        },
+        body:JSON.stringify({
+            action:"createChildren",
+            parentId:parentId,
+            children:children
+        })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        if(data.success){
+
+            renderCards(data.children);
+
+        }else{
+
+            alert("作成失敗");
+
+        }
+
+    });
+
+}
+
+// ==============================
+// カード表示
+// ==============================
+function renderCards(children){
+
+    const area =
+        document.getElementById("cards");
+
+    area.innerHTML = "";
+
+    children.forEach(child=>{
+
+        const div =
+            document.createElement("div");
+
+        div.className = "child-card";
+
+        div.innerHTML = `
+            <h2>だがポカード</h2>
+            <div>${child.name}</div>
+            <div class="qr" id="${child.code}"></div>
+            <div style="margin-top:10px;">
+                ${child.code}
+            </div>
+        `;
+
+        area.appendChild(div);
+
+        QRCode.toCanvas(
+            child.code,
+            {
+                width:180
+            },
+            function(err,canvas){
+
+                document
+                    .getElementById(child.code)
+                    .appendChild(canvas);
+
+            }
+        );
+
+    });
+
+}
+
+// ==============================
+// カメラ起動
+// ==============================
+const html5QrCode =
+    new Html5Qrcode("reader");
+
+Html5Qrcode.getCameras().then(devices=>{
+
+    if(devices.length){
+
+        html5QrCode.start(
+            { facingMode:"environment" },
+            {
+                fps:10,
+                qrbox:250
+            },
+            onScanSuccess
+        );
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
