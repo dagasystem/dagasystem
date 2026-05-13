@@ -59,6 +59,7 @@ button{
     background:#007bff;
     color:white;
     font-size:16px;
+    cursor:pointer;
 }
 
 .child-card{
@@ -79,12 +80,17 @@ button{
     background:#28a745;
 }
 
+.reload-btn{
+    background:#666;
+}
+
 @media print{
 
     button,
     #reader,
     .info,
-    #createArea{
+    #createArea,
+    .reload-btn{
         display:none;
     }
 
@@ -95,6 +101,7 @@ button{
     .child-card{
         border:1px solid #000;
     }
+
 }
 
 </style>
@@ -109,12 +116,18 @@ button{
 <div id="reader"></div>
 
 <div class="info">
-    <div id="parentInfo">親QRを読み取ってください</div>
+    <div id="parentInfo">
+        親QRを読み取ってください
+    </div>
 </div>
 
 <div id="createArea" style="display:none;">
 
-    <input type="number" id="count" placeholder="子どもの人数">
+    <input
+        type="number"
+        id="count"
+        placeholder="追加する子どもの人数"
+    >
 
     <button onclick="generateInputs()">
         名前入力へ進む
@@ -122,48 +135,86 @@ button{
 
     <div id="nameInputs"></div>
 
-    </div>
-    
-    <div id="cards"></div>
-    
-    <hr style="margin-top:30px;">
-    
-    <h2>新しい子を追加</h2>
-    
-    <input type="text" id="newChildName" placeholder="子どもの名前">
-    
-    <button onclick="addNewChild()">
-        子カード追加
-    </button>
-    
+</div>
 
-<button class="print-btn" onclick="window.print()">
+<div id="cards"></div>
+
+<hr style="margin-top:30px;">
+
+<h2>新しい子を追加</h2>
+
+<input
+    type="text"
+    id="newChildName"
+    placeholder="子どもの名前"
+>
+
+<button onclick="addNewChild()">
+    子カード追加
+</button>
+
+<button
+    class="print-btn"
+    onclick="window.print()"
+>
     印刷する
+</button>
+
+<button
+    class="reload-btn"
+    onclick="location.reload()"
+>
+    別の親を読み取る
 </button>
 
 </div>
 
 <script>
 
+// ==============================
+// GAS URL
+// ==============================
+
 const GAS_URL =
 "https://script.google.com/macros/s/AKfycbxBdXzHguVz7CNH393mkRaQd9kcdy-_tmLbtAqORdVL1ypM8Gd7ax7MOtR2XVLgcenErQ/exec";
 
+// ==============================
+// グローバル
+// ==============================
+
 let parentId = null;
 
+let scanned = false;
+
 // ==============================
-// QR読み取り
+// QR読み取り成功
 // ==============================
+
 function onScanSuccess(decodedText){
 
+    // 二重読み防止
+    if(scanned){
+        return;
+    }
+
+    scanned = true;
+
+    // カメラ停止
+    html5QrCode.stop();
+
     fetch(GAS_URL,{
+
         method:"POST",
+
         headers:{
             "Content-Type":"text/plain"
         },
+
         body:JSON.stringify({
             action:"getUser",
             code:decodedText
         })
+
     })
     .then(res=>res.json())
     .then(data=>{
@@ -171,39 +222,50 @@ function onScanSuccess(decodedText){
         if(data.success){
 
             parentId = data.userId;
-            
-            // 既存子カード確認
+
+            document.getElementById("parentInfo").innerText =
+                "親：" +
+                data.name +
+                " / 残高：" +
+                data.balance +
+                "pt";
+
+            document.getElementById("createArea").style.display =
+                "block";
+
+            // ==============================
+            // 既存子取得
+            // ==============================
+
             fetch(GAS_URL,{
+
                 method:"POST",
+
                 headers:{
                     "Content-Type":"text/plain"
                 },
+
                 body:JSON.stringify({
                     action:"getChildren",
                     parentId:parentId
                 })
+
             })
             .then(res=>res.json())
             .then(r=>{
-            
-                // 既存子がいる
-                if(r.children.length > 0){
-            
+
+                if(r.success){
+
                     renderCards(r.children);
-            
+
                 }
-            
+
             });
 
-            
-            document.getElementById("parentInfo").innerText =
-                "親：" + data.name +
-                " / 残高：" + data.balance + "pt";
-
-            document.getElementById("createArea").style.display = "block";
-
         }else{
+
             alert("親が見つかりません");
+
         }
 
     });
@@ -213,10 +275,18 @@ function onScanSuccess(decodedText){
 // ==============================
 // 名前入力欄生成
 // ==============================
+
 function generateInputs(){
 
     const count =
         Number(document.getElementById("count").value);
+
+    if(!count || count <= 0){
+
+        alert("人数を入力してください");
+        return;
+
+    }
 
     const area =
         document.getElementById("nameInputs");
@@ -240,11 +310,13 @@ function generateInputs(){
             子カード作成
         </button>
     `;
+
 }
 
 // ==============================
-// 子カード作成
+// 子カード一括作成
 // ==============================
+
 function createChildren(){
 
     const count =
@@ -254,29 +326,42 @@ function createChildren(){
 
     for(let i=0;i<count;i++){
 
-        children.push({
-            name:document.getElementById(`child${i}`).value
-        });
+        const name =
+            document.getElementById(`child${i}`).value;
+
+        if(name){
+
+            children.push({
+                name:name
+            });
+
+        }
 
     }
 
     fetch(GAS_URL,{
+
         method:"POST",
+
         headers:{
             "Content-Type":"text/plain"
         },
+
         body:JSON.stringify({
             action:"createChildren",
             parentId:parentId,
             children:children
         })
+
     })
     .then(res=>res.json())
     .then(data=>{
 
         if(data.success){
 
-            renderCards(data.children);
+            loadChildren();
+
+            alert("子カードを作成しました");
 
         }else{
 
@@ -291,6 +376,7 @@ function createChildren(){
 // ==============================
 // 新しい子追加
 // ==============================
+
 function addNewChild(){
 
     const name =
@@ -304,10 +390,13 @@ function addNewChild(){
     }
 
     fetch(GAS_URL,{
+
         method:"POST",
+
         headers:{
             "Content-Type":"text/plain"
         },
+
         body:JSON.stringify({
             action:"createChildren",
             parentId:parentId,
@@ -317,13 +406,14 @@ function addNewChild(){
                 }
             ]
         })
+
     })
     .then(res=>res.json())
     .then(data=>{
 
         if(data.success){
 
-            renderCards(data.children);
+            loadChildren();
 
             document.getElementById("newChildName").value = "";
 
@@ -338,15 +428,51 @@ function addNewChild(){
     });
 
 }
-    
-    
+
+// ==============================
+// 子一覧再取得
+// ==============================
+
+function loadChildren(){
+
+    fetch(GAS_URL,{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"text/plain"
+        },
+
+        body:JSON.stringify({
+            action:"getChildren",
+            parentId:parentId
+        })
+
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        if(data.success){
+
+            renderCards(data.children);
+
+        }
+
+    });
+
+}
+
 // ==============================
 // カード表示
 // ==============================
+
 function renderCards(children){
 
     const area =
         document.getElementById("cards");
+
+    // 一旦クリア
+    area.innerHTML = "";
 
     children.forEach(child=>{
 
@@ -357,27 +483,50 @@ function renderCards(children){
 
         div.innerHTML = `
             <h2>だがポカード</h2>
-            <div>${child.name}</div>
-            <div class="qr" id="${child.code}"></div>
+
+            <div style="font-size:20px;">
+                ${child.name}
+            </div>
+
+            <div
+                class="qr"
+                id="${child.code}"
+            ></div>
+
             <div style="margin-top:10px;">
                 ${child.code}
+            </div>
+
+            <div style="margin-top:5px;">
+                残高：${child.balance}pt
             </div>
         `;
 
         area.appendChild(div);
 
         QRCode.toCanvas(
+
             child.code,
+
             {
                 width:180
             },
+
             function(err,canvas){
+
+                if(err){
+
+                    console.error(err);
+                    return;
+
+                }
 
                 document
                     .getElementById(child.code)
                     .appendChild(canvas);
 
             }
+
         );
 
     });
@@ -387,6 +536,7 @@ function renderCards(children){
 // ==============================
 // カメラ起動
 // ==============================
+
 const html5QrCode =
     new Html5Qrcode("reader");
 
@@ -395,12 +545,16 @@ Html5Qrcode.getCameras().then(devices=>{
     if(devices.length){
 
         html5QrCode.start(
+
             { facingMode:"environment" },
+
             {
                 fps:10,
                 qrbox:250
             },
+
             onScanSuccess
+
         );
 
     }
