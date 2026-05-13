@@ -213,7 +213,7 @@ async function registerMember() {
         
         const result = await response.json();
         
-        console.log(result);
+        alert(result);
         
         if (!result.success) {
             throw new Error(result.message);
