@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>キャンペーン作成</title>
+
+<style>
+
+body{
+    font-family:sans-serif;
+    background:#f4f4f4;
+    padding:20px;
+}
+
+.card{
+    max-width:520px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+h1{
+    margin-top:0;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    margin-top:20px;
+    border:none;
+    border-radius:8px;
+    background:#007bff;
+    color:white;
+    font-size:16px;
+}
+
+.result{
+    margin-top:20px;
+    padding:15px;
+    background:#f0f0f0;
+    border-radius:8px;
+    line-height:1.8;
+    word-break:break-all;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>キャンペーン作成</h1>
+
+<input
+    type="text"
+    id="campaignName"
+    placeholder="キャンペーン名"
+>
+
+<input
+    type="text"
+    id="sponsorId"
+    placeholder="スポンサーID（例：SP001）"
+>
+
+<input
+    type="number"
+    id="point"
+    placeholder="配布ポイント"
+>
+
+<input
+    type="number"
+    id="limit"
+    placeholder="配布上限人数"
+>
+
+<button onclick="createCampaign()">
+キャンペーン作成
+</button>
+
+<div
+    class="result"
+    id="result"
+>
+未作成
+</div>
+
+</div>
+
+<script>
+
+// ==============================
+// GAS URL
+// ==============================
+
+const GAS_URL =
+"https://script.google.com/macros/s/AKfycbxBdXzHguVz7CNH393mkRaQd9kcdy-_tmLbtAqORdVL1ypM8Gd7ax7MOtR2XVLgcenErQ/exec";
+
+// ==============================
+// 作成
+// ==============================
+
+function createCampaign(){
+
+    const campaignName =
+        document
+            .getElementById("campaignName")
+            .value
+            .trim();
+
+    const sponsorId =
+        document
+            .getElementById("sponsorId")
+            .value
+            .trim();
+
+    const point =
+        Number(
+            document
+                .getElementById("point")
+                .value
+        );
+
+    const limit =
+        Number(
+            document
+                .getElementById("limit")
+                .value
+        );
+
+    if(!campaignName){
+
+        alert("キャンペーン名を入力してください");
+        return;
+
+    }
+
+    if(!sponsorId){
+
+        alert("スポンサーIDを入力してください");
+        return;
+
+    }
+
+    fetch(GAS_URL,{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"text/plain"
+        },
+
+        body:JSON.stringify({
+
+            action:"createCampaign",
+
+            campaignName:campaignName,
+
+            sponsorId:sponsorId,
+
+            point:point,
+
+            limit:limit
+
+        })
+
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        if(data.success){
+
+            const url =
+                "https://あなたのgithub.io/sponsor.html?campaign=" +
+                data.campaignId;
+
+            document.getElementById("result").innerHTML =
+
+                "<b>キャンペーン作成完了</b><br><br>" +
+
+                "キャンペーンID：<br>" +
+                data.campaignId +
+                "<br><br>" +
+
+                "LINE配布URL：<br>" +
+                url;
+
+        }else{
+
+            alert(data.message);
+
+        }
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
