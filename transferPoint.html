@@ -18,7 +18,7 @@ body{
 }
 
 .card{
-    max-width:500px;
+    max-width:520px;
     margin:auto;
     background:white;
     padding:20px;
@@ -41,6 +41,17 @@ h1{
     border-radius:10px;
     padding:15px;
     margin-top:15px;
+    background:#fafafa;
+}
+
+.child-name{
+    font-size:20px;
+    font-weight:bold;
+}
+
+.child-balance{
+    margin-top:5px;
+    color:#555;
 }
 
 input{
@@ -50,12 +61,13 @@ input{
     border:1px solid #ccc;
     border-radius:8px;
     box-sizing:border-box;
+    font-size:16px;
 }
 
 button{
     width:100%;
-    padding:12px;
-    margin-top:10px;
+    padding:14px;
+    margin-top:15px;
     border:none;
     border-radius:8px;
     background:#007bff;
@@ -67,6 +79,17 @@ button{
     background:#666;
 }
 
+.send{
+    background:#28a745;
+}
+
+.notice{
+    margin-top:15px;
+    color:#666;
+    font-size:14px;
+    line-height:1.6;
+}
+
 </style>
 </head>
 
@@ -74,28 +97,41 @@ button{
 
 <div class="card">
 
-<h1>だがポ送金</h1>
+    <h1>だがポ送金</h1>
 
-<div id="userName">
-読み込み中...
-</div>
+    <div id="userName">
+        読み込み中...
+    </div>
 
-<div class="balance" id="parentBalance">
-残高：-
-</div>
+    <div
+        class="balance"
+        id="parentBalance"
+    >
+        残高：-
+    </div>
 
-<hr>
+    <div class="notice">
+        子どもごとにポイントを入力し、
+        「まとめて送金」を押してください。
+    </div>
 
-<div id="childrenArea">
+    <hr>
 
-</div>
+    <div id="childrenArea"></div>
 
-<button
-    class="reload"
-    onclick="loadData()"
->
-更新
-</button>
+    <button
+        class="send"
+        onclick="sendAllPoints()"
+    >
+        まとめて送金
+    </button>
+
+    <button
+        class="reload"
+        onclick="loadData()"
+    >
+        更新
+    </button>
 
 </div>
 
@@ -108,12 +144,14 @@ button{
 const LIFF_ID =
 "2010065973-kJvo3Vvj";
 
+
 // ==============================
 // GAS URL
 // ==============================
 
 const GAS_URL =
 "https://script.google.com/macros/s/AKfycbxBdXzHguVz7CNH393mkRaQd9kcdy-_tmLbtAqORdVL1ypM8Gd7ax7MOtR2XVLgcenErQ/exec";
+
 
 // ==============================
 // グローバル
@@ -124,6 +162,9 @@ let profile = null;
 let parentCode = null;
 
 let parentId = null;
+
+let childrenData = [];
+
 
 // ==============================
 // 初期化
@@ -145,7 +186,6 @@ async function main(){
     profile =
         await liff.getProfile();
 
-    // 保存済QR取得
     parentCode =
         localStorage.getItem("memberQR");
 
@@ -160,13 +200,13 @@ async function main(){
 
 }
 
+
 // ==============================
 // データ読込
 // ==============================
 
 function loadData(){
 
-    // 親取得
     fetch(GAS_URL,{
 
         method:"POST",
@@ -176,8 +216,11 @@ function loadData(){
         },
 
         body:JSON.stringify({
+
             action:"getUser",
+
             code:parentCode
+
         })
 
     })
@@ -196,14 +239,18 @@ function loadData(){
                 data.balance +
                 "pt";
 
-            // 子取得
             loadChildren();
+
+        }else{
+
+            alert("親情報取得失敗");
 
         }
 
     });
 
 }
+
 
 // ==============================
 // 子一覧取得
@@ -220,8 +267,11 @@ function loadChildren(){
         },
 
         body:JSON.stringify({
+
             action:"getChildren",
+
             parentId:parentId
+
         })
 
     })
@@ -230,13 +280,19 @@ function loadChildren(){
 
         if(data.success){
 
-            renderChildren(data.children);
+            childrenData =
+                data.children;
+
+            renderChildren(
+                data.children
+            );
 
         }
 
     });
 
 }
+
 
 // ==============================
 // 子表示
@@ -257,28 +313,21 @@ function renderChildren(children){
         div.className = "child";
 
         div.innerHTML = `
-            <div style="font-size:20px;">
+
+            <div class="child-name">
                 ${child.name}
             </div>
 
-            <div style="margin-top:5px;">
+            <div class="child-balance">
                 残高：${child.balance}pt
             </div>
 
             <input
                 type="number"
-                id="amount${index}"
-                placeholder="送金ポイント"
+                id="amount_${child.code}"
+                placeholder="送るポイント"
             >
 
-            <button
-                onclick="sendPoint(
-                    '${child.code}',
-                    'amount${index}'
-                )"
-            >
-                ポイントを送る
-            </button>
         `;
 
         area.appendChild(div);
@@ -287,72 +336,83 @@ function renderChildren(children){
 
 }
 
+
 // ==============================
-// 送金
+// まとめて送金
 // ==============================
 
-function sendPoint(childCode,inputId){
+async function sendAllPoints(){
 
-    const amount =
-        Number(
-            document.getElementById(inputId).value
+    let hasInput = false;
+
+    for(const child of childrenData){
+
+        const amount = Number(
+
+            document.getElementById(
+                "amount_" + child.code
+            ).value
+
         );
 
-    if(!amount || amount <= 0){
+        if(amount > 0){
 
-        alert("ポイントを入力してください");
+            hasInput = true;
+
+            const res = await fetch(GAS_URL,{
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"text/plain"
+                },
+
+                body:JSON.stringify({
+
+                    action:"transferPoint",
+
+                    parentId:parentId,
+
+                    childCode:child.code,
+
+                    amount:amount
+
+                })
+
+            });
+
+            const data =
+                await res.json();
+
+            if(!data.success){
+
+                alert(
+                    child.name +
+                    " 送金失敗\n\n" +
+                    data.message
+                );
+
+                return;
+
+            }
+
+        }
+
+    }
+
+    if(!hasInput){
+
+        alert("送金ポイントを入力してください");
         return;
 
     }
 
-    fetch(GAS_URL,{
+    alert("送金完了");
 
-        method:"POST",
-
-        headers:{
-            "Content-Type":"text/plain"
-        },
-
-        body:JSON.stringify({
-
-            action:"transferPoint",
-
-            parentId:parentId,
-
-            childCode:childCode,
-
-            amount:amount
-
-        })
-
-    })
-    .then(res=>res.json())
-    .then(data=>{
-
-        if(data.success){
-
-            alert(
-                "送金完了\n\n" +
-                "親残高：" +
-                data.parentBalance +
-                "pt"
-            );
-
-            // 親残高更新
-            document.getElementById("parentBalance").innerText =
-                data.parentBalance + "pt";            
-            
-            loadData();
-
-        }else{
-
-            alert(data.message);
-
-        }
-
-    });
+    loadData();
 
 }
+
 
 // ==============================
 // 実行
