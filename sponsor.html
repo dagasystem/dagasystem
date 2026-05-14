@@ -3,13 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>スポンサーポイント受取</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
-
 body{
     margin:0;
     padding:20px;
@@ -27,9 +25,7 @@ body{
     text-align:center;
 }
 
-h1{
-    margin-top:0;
-}
+h1{ margin-top:0; }
 
 .company{
     margin-top:10px;
@@ -73,8 +69,8 @@ button:disabled{
     border-radius:10px;
     line-height:1.8;
 }
-
 </style>
+
 </head>
 
 <body>
@@ -83,17 +79,11 @@ button:disabled{
 
 <h1>スポンサー応援ポイント</h1>
 
-<div
-    class="company"
-    id="campaignName"
->
+<div class="company" id="campaignName">
 読み込み中...
 </div>
 
-<div
-    class="point"
-    id="point"
->
+<div class="point" id="point">
 -
 </div>
 
@@ -102,17 +92,11 @@ button:disabled{
 応援ポイントが届いています
 </div>
 
-<button
-    id="receiveBtn"
-    onclick="receivePoint()"
->
+<button id="receiveBtn" onclick="receivePoint()">
 ポイントを受け取る
 </button>
 
-<div
-    class="result"
-    id="result"
->
+<div class="result" id="result">
 受取待機中
 </div>
 
@@ -121,15 +105,9 @@ button:disabled{
 <script>
 
 // ==============================
-// LIFF ID
+// 設定
 // ==============================
-
-const LIFF_ID =
-"2010065973-6EH9O8W3";
-
-// ==============================
-// GAS URL
-// ==============================
+const LIFF_ID = "2010065973-6EH9O8W3";
 
 const GAS_URL =
 "https://script.google.com/macros/s/AKfycbxBdXzHguVz7CNH393mkRaQd9kcdy-_tmLbtAqORdVL1ypM8Gd7ax7MOtR2XVLgcenErQ/exec";
@@ -137,88 +115,52 @@ const GAS_URL =
 // ==============================
 // グローバル
 // ==============================
-
-let profile = null;
-
 let campaignId = null;
-
-let memberQR = null;
+let lineUserId = null;
 
 // ==============================
 // 初期化
 // ==============================
-
 async function main(){
 
-    // URLからcampaign取得
-    const params =
-        new URLSearchParams(location.search);
-
-    campaignId =
-        params.get("campaign");
+    const params = new URLSearchParams(location.search);
+    campaignId = params.get("campaign");
 
     if(!campaignId){
-
         alert("キャンペーンIDがありません");
         return;
-
     }
 
-    // LIFF初期化
-    await liff.init({
-        liffId: LIFF_ID
-    });
+    await liff.init({ liffId: LIFF_ID });
 
     if(!liff.isLoggedIn()){
-
         liff.login();
         return;
-
     }
 
-    profile =
-        await liff.getProfile();
-
-    // 保存済QR
-    memberQR =
-        localStorage.getItem("memberQR");
-
-    if(!memberQR){
-
-        alert("会員証がありません");
-        return;
-
-    }
+    const idToken = liff.getDecodedIDToken();
+    lineUserId = idToken.sub;
 
     loadCampaign();
-
 }
 
 // ==============================
 // キャンペーン取得
 // ==============================
-
 function loadCampaign(){
 
     fetch(GAS_URL,{
-
         method:"POST",
-
         headers:{
             "Content-Type":"text/plain"
         },
-
-        body:JSON.stringify({
-
+        body: JSON.stringify({
             action:"getCampaign",
-
-            campaignId:campaignId
-
+            campaignId: campaignId
         })
-
     })
-    .then(res=>res.json())
-    .then(data=>{
+    .then(res => res.json())
+    .then(data => {
 
         if(data.success){
 
@@ -229,9 +171,7 @@ function loadCampaign(){
                 data.point + "pt";
 
         }else{
-
             alert(data.message);
-
         }
 
     });
@@ -241,58 +181,37 @@ function loadCampaign(){
 // ==============================
 // ポイント受取
 // ==============================
-
 function receivePoint(){
 
-    const btn =
-        document.getElementById("receiveBtn");
-
+    const btn = document.getElementById("receiveBtn");
     btn.disabled = true;
 
     fetch(GAS_URL,{
-
         method:"POST",
-
         headers:{
             "Content-Type":"text/plain"
         },
-
-        body:JSON.stringify({
-
+        body: JSON.stringify({
             action:"receiveSponsor",
-
-            campaignId:campaignId,
-
-            code:memberQR,
-
-            lineUserId:profile.userId
-
+            campaignId: campaignId,
+            lineUserId: lineUserId
         })
-
     })
-    .then(res=>res.json())
-    .then(data=>{
+    .then(res => res.json())
+    .then(data => {
 
         if(data.success){
 
             document.getElementById("result").innerHTML =
-
                 "<b>受取完了！</b><br><br>" +
-
-                "受取ポイント：" +
-                data.point +
-                "pt<br>" +
-
-                "現在残高：" +
-                data.balance +
-                "pt";
+                "受取ポイント：" + data.point + "pt<br>" +
+                "現在残高：" + data.parentBalance + "pt";
 
             btn.style.display = "none";
 
         }else{
 
             alert(data.message);
-
             btn.disabled = false;
 
         }
@@ -304,7 +223,6 @@ function receivePoint(){
 // ==============================
 // 実行
 // ==============================
-
 main();
 
 </script>
