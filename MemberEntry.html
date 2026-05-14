@@ -256,12 +256,14 @@ async function registerMember() {
             memberCode + "-" + randomCode(4);
 
         const payload = {
-
+        
+            action: "registerUser",
+        
             userId: profileData.userId,
             displayName: profileData.displayName,
             code: secureCode,
             timestamp: new Date().toISOString()
-
+        
         };
 
         console.log(payload);
@@ -389,7 +391,7 @@ function randomCode(length){
 // ==============================
 // 実行
 // ==============================
-// localStorage.removeItem("memberQR");
+localStorage.removeItem("memberQR");
 main();
 
 </script>
