@@ -338,6 +338,10 @@ function sendPoint(childCode,inputId){
                 "pt"
             );
 
+            // 親残高更新
+            document.getElementById("parentBalance").innerText =
+                data.parentBalance + "pt";            
+            
             loadData();
 
         }else{
