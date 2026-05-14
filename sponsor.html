@@ -105,7 +105,7 @@ button:disabled{
 <script>
 
 // ==============================
-// 設定
+// LIFF / GAS設定
 // ==============================
 const LIFF_ID = "2010065973-6EH9O8W3";
 
@@ -113,21 +113,53 @@ const GAS_URL =
 "https://script.google.com/macros/s/AKfycbxBdXzHguVz7CNH393mkRaQd9kcdy-_tmLbtAqORdVL1ypM8Gd7ax7MOtR2XVLgcenErQ/exec";
 
 // ==============================
-// グローバル
+// グローバル変数
 // ==============================
 let campaignId = null;
 let lineUserId = null;
+
+// ==============================
+// キャンペーンID取得（完全対策版）
+// ==============================
+function getCampaignId(){
+
+    const params = new URLSearchParams(location.search);
+
+    // ① 通常
+    let id = params.get("campaign");
+
+    // ② liff.state対応
+    if(!id && params.get("liff.state")){
+
+        const state = decodeURIComponent(params.get("liff.state"));
+        const stateParams = new URLSearchParams(state);
+        id = stateParams.get("campaign");
+    }
+
+    // ③ sessionStorage復元
+    if(!id){
+        id = sessionStorage.getItem("campaignId");
+    }
+
+    // ④ 保存
+    if(id){
+        sessionStorage.setItem("campaignId", id);
+    }
+
+    return id;
+}
 
 // ==============================
 // 初期化
 // ==============================
 async function main(){
 
-console.log("URL:", location.href);
-console.log("PARAMS:", location.search);
-    
-    const params = new URLSearchParams(location.search);
-    campaignId = params.get("campaign");
+    console.log("URL:", location.href);
+    console.log("PARAMS:", location.search);
+
+    campaignId = getCampaignId();
+
+    console.log("campaignId:", campaignId);
 
     if(!campaignId){
         alert("キャンペーンIDがありません");
