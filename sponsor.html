@@ -123,6 +123,9 @@ let lineUserId = null;
 // ==============================
 async function main(){
 
+console.log("URL:", location.href);
+console.log("PARAMS:", location.search);
+    
     const params = new URLSearchParams(location.search);
     campaignId = params.get("campaign");
 
