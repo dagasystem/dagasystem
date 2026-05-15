@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>だがポ送金</title>
+<title>だがポをおくる</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -97,7 +97,7 @@ button{
 
 <div class="card">
 
-    <h1>だがポ送金</h1>
+    <h1>だがポをおくる</h1>
 
     <div id="userName">
         読み込み中...
@@ -112,7 +112,7 @@ button{
 
     <div class="notice">
         子どもごとにポイントを入力し、
-        「まとめて送金」を押してください。
+        「まとめておくる」を押してください。
     </div>
 
     <hr>
@@ -123,7 +123,7 @@ button{
         class="send"
         onclick="sendAllPoints()"
     >
-        まとめて送金
+        まとめておくる
     </button>
 
     <button
@@ -325,7 +325,7 @@ function renderChildren(children){
             <input
                 type="number"
                 id="amount_${child.code}"
-                placeholder="送るポイント"
+                placeholder="おくるポイント"
             >
 
         `;
@@ -402,7 +402,7 @@ async function sendAllPoints(){
 
     if(!hasInput){
 
-        alert("送金ポイントを入力してください");
+        alert("おくるポイントを入力してください");
         return;
 
     }
